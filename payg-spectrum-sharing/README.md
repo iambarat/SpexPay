@@ -16,3 +16,12 @@ rustc -V
 cargo -V
 
 ```
+
+### 3. Create a Python package that wraps Dock's BBS+ (PyO3 + maturin)
+
+```bash
+pip install maturin
+
+mkdir -p crypto/crypto_bindings && cd crypto/crypto_bindings
+maturin init --bindings pyo3 --name -payg_bbs
+```

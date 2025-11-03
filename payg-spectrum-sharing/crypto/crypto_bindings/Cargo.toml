@@ -9,7 +9,9 @@ name = "payg_bbs"
 crate-type = ["cdylib"]
 
 [dependencies]
+# proof_system = "0.34.0"
 # pyo3 = "0.25.0"
+
 pyo3 = { version = "0.22", features = ["extension-module"] }
 
 # Dock crypto crates (BBS+, composite proof system)
