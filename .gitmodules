@@ -1,0 +1,3 @@
+[submodule "payg-spectrum-sharing/contracts/lib/forge-std"]
+	path = payg-spectrum-sharing/contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

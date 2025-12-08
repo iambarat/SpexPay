@@ -1,0 +1,26 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\begin{document}
+
+\section*{Gas Report (Foundry \texttt{forge test --gas-report})}
+Deployment and per-call gas for the PAYG escrow. Values are from the latest run against \texttt{src/Escrow.sol} using Anvil defaults.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Function & Min & Avg & Median & Max & \# Calls \\
+    \midrule
+    \textbf{Escrow deployment} & \multicolumn{5}{l}{Cost = 1{,}618{,}940 gas \quad Size = 7{,}303 bytes} \\
+    openSession & 251{,}762 & 251{,}767 & 251{,}762 & 251{,}774 & 7 \\
+    claim       & 31{,}794 & 122{,}254 & 109{,}719 & 304{,}587 & 9 \\
+    closeSession& 26{,}604 & 46{,}742 & 50{,}573 & 63{,}051 & 3 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Escrow gas usage (Anvil, forge test gas report).}
+\end{table}
+
+\paragraph{Discussion.} Deployment cost is $\sim$1.62M gas for the escrow bytecode (7.3 kB). \texttt{openSession} is heavy because it writes full session state and pulls deposit via \texttt{transferFrom}. \texttt{closeSession} is cheap ($\sim$26k--63k) as it only refunds remaining deposit and flips the closed flag. \textbf{Claim scales with the gap} $(i - \text{lastI})$: the hash-chain loop dominates. In our gap benchmarks (10/50/100 beats) the claim call spans roughly 0.11M--0.30M gas (min = 31{,}794 for tiny gaps; max = 304{,}587 observed at 100-beat jump). For token ops, \texttt{MockERC20} costs: mint $\approx$68.7k gas, approve $\approx$47k, balanceOf $\approx$2.8k (not shown in the main table). These figures inform cost per heartbeat: on-chain cost per claim is driven by the claimed gap plus base call overhead and L1/L2 gas pricing.
+
+\end{document}

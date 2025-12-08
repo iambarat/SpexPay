@@ -1,0 +1,28 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\begin{document}
+
+\section*{Off-chain Crypto Performance}
+Average timings from 10 runs of the Python harness (VC issuance, proof generation/verification). Scheme: BBS+ signatures over BLS12-381 (Dock Rust lib via PyO3), composite proof with equality of hidden \texttt{device\_id} across VC-A/VC-B. Attributes: VC-A (4 msgs), VC-B (9 msgs incl. s\_id, L, y0, bm\_addr, price, etc.). Hidden attribute: \texttt{device\_id} at index 0 in both.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{lrr}
+    \toprule
+    Step & Mean (ms) & Notes \\
+    \midrule
+    Issuance VC-A & 10.3 & BBS+ sign 4 messages \\
+    Issuance VC-B & 12.2 & BBS+ sign 9 messages \\
+    Proof generation & 45.9 & Composite proof, hides device\_id, equality across VC-A/B \\
+    Proof verification & 84.6 & Checks both BBS+ proofs + equality constraint \\
+    Hash chain (L=300) & 0.14 & Compute y\_{300}\,$\rightarrow$\,y\_0 with SHA-256 \\
+    Heartbeat emit (per beat) & $<0.1$ & Write i,y\_i to file (Python I/O, negligible) \\
+    \bottomrule
+  \end{tabular}
+  \caption{Average off-chain timings (10 runs; hash chain measured once at L=300).}
+\end{table}
+
+\paragraph{Discussion.} Issuance and proof steps are dominated by BBS+ group ops on BLS12-381. Each VC is signed with BBS+ (messages committed into the signature accumulator); the presentation builds a composite proof that (i) both BBS+ signatures verify, (ii) the hidden \texttt{device\_id} witness is equal across VC-A/VC-B, and (iii) revealed attributes match policy. Verification repeats the BBS+ checks and the equality constraint; at current sizes this costs $\sim$85 ms and yields a proof of $\sim$857 bytes. Hash-chain generation for L=300 (SHA-256 with domain separation \texttt{sid || i || y\_{i+1}}) is sub-millisecond; per-beat emission is negligible and I/O-bound. Overall, the off-chain crypto path is lightweight relative to on-chain gas costs.
+
+\end{document}

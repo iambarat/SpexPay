@@ -66,6 +66,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3d036a3c4ab069c7b410a2ce876bd74808d2d0888a82667669f8e783a898bf1"
 
 [[package]]
+name = "ark-bls12-381"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c775f0d12169cba7aae4caeb547bb6a50781c7449a8aa53793827c9ec4abf488"
+dependencies = [
+ "ark-ec",
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+]
+
+[[package]]
 name = "ark-crypto-primitives"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -286,13 +298,13 @@ dependencies = [
 [[package]]
 name = "bbs_plus"
 version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d9282cfe703afcb3644e13573018cb91df7c9cb7ddd420d614dae462e68c6cf"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_crypto_utils",
  "itertools 0.14.0",
@@ -358,14 +370,14 @@ dependencies = [
 [[package]]
 name = "bulletproofs_plus_plus"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eab0582f029697e0b5b39b2b72d93b6b753b7b01cbd0146a172edc9bf7755008"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-poly",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_crypto_utils",
  "rayon",
@@ -463,6 +475,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
+name = "cfg_eval"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45565fc9416b9896014f5732ac776f810ee53a66730c17e4020c3ec064a8f88f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.108",
+]
+
+[[package]]
 name = "chacha20"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -520,14 +543,14 @@ dependencies = [
 [[package]]
 name = "coconut-crypto"
 version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "453e8eab4ba44acaa9ac366845741babd0d1e487d1605a9c7ca75307dc50ec3b"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-poly",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_crypto_utils",
  "itertools 0.14.0",
@@ -596,7 +619,7 @@ dependencies = [
  "regalloc2",
  "rustc-hash",
  "smallvec",
- "target-lexicon 0.12.16",
+ "target-lexicon",
 ]
 
 [[package]]
@@ -641,7 +664,7 @@ dependencies = [
  "cranelift-codegen",
  "log",
  "smallvec",
- "target-lexicon 0.12.16",
+ "target-lexicon",
 ]
 
 [[package]]
@@ -843,8 +866,7 @@ dependencies = [
 [[package]]
 name = "dock_crypto_utils"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d4d284b7d0449d718e1740be2b1919f0f7da188c30f620ba74e7d33c070ad4d"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "aead",
  "ark-ec",
@@ -852,6 +874,7 @@ dependencies = [
  "ark-poly",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_merlin",
  "hkdf",
@@ -867,8 +890,7 @@ dependencies = [
 [[package]]
 name = "dock_merlin"
 version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f19d398293c9cb71dda798a521c7ffc5182d6222e0d66f731041755efaaa7ced"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-serialize",
  "ark-std",
@@ -1159,6 +1181,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "itoa"
+version = "1.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
+
+[[package]]
 name = "js-sys"
 version = "0.3.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1180,14 +1208,14 @@ dependencies = [
 [[package]]
 name = "kvac"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f47aeba2a7640ece0b1cd506d34411fbc30a60d90c41d607eaf117f2d3567eef"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-secp256r1",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_crypto_utils",
  "itertools 0.14.0",
@@ -1213,8 +1241,7 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 [[package]]
 name = "legogroth16"
 version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40bd603768a014bbc8c26a2fee85f92c45fb8ee169f6a2457b7e2f641cd904d8"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -1481,8 +1508,7 @@ dependencies = [
 [[package]]
 name = "oblivious_transfer_protocols"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04833c888c1a777e4cd11ae8de29c4b170f1f91e1a296f9ddc7ff89f9162fe97"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "aes",
  "ark-ec",
@@ -1491,6 +1517,7 @@ dependencies = [
  "ark-std",
  "byteorder",
  "cc",
+ "cfg_eval",
  "cipher",
  "digest",
  "dock_crypto_utils",
@@ -1537,8 +1564,21 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 name = "payg_bbs"
 version = "0.1.0"
 dependencies = [
+ "ark-bls12-381",
+ "ark-ec",
+ "ark-ff",
+ "ark-serialize",
+ "bbs_plus",
+ "blake2",
+ "dock_crypto_utils",
+ "hex",
+ "once_cell",
  "proof_system",
  "pyo3",
+ "rand",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -1617,8 +1657,7 @@ dependencies = [
 [[package]]
 name = "proof_system"
 version = "0.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecaeb37346233673a8234f8491f68ab877722826fddd60d3a51a17b6961f33a1"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -1629,6 +1668,7 @@ dependencies = [
  "ark-std",
  "bbs_plus",
  "bulletproofs_plus_plus",
+ "cfg_eval",
  "chacha20poly1305",
  "coconut-crypto",
  "digest",
@@ -1692,10 +1732,11 @@ dependencies = [
 
 [[package]]
 name = "pyo3"
-version = "0.25.1"
+version = "0.22.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8970a78afe0628a3e3430376fc5fd76b6b45c4d43360ffd6cdd40bdde72b682a"
+checksum = "f402062616ab18202ae8319da13fa4279883a2b8a9d9f83f20dbade813ce1884"
 dependencies = [
+ "cfg-if",
  "indoc",
  "libc",
  "memoffset",
@@ -1709,19 +1750,19 @@ dependencies = [
 
 [[package]]
 name = "pyo3-build-config"
-version = "0.25.1"
+version = "0.22.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "458eb0c55e7ece017adeba38f2248ff3ac615e53660d7c71a238d7d2a01c7598"
+checksum = "b14b5775b5ff446dd1056212d778012cbe8a0fbffd368029fd9e25b514479c38"
 dependencies = [
  "once_cell",
- "target-lexicon 0.13.3",
+ "target-lexicon",
 ]
 
 [[package]]
 name = "pyo3-ffi"
-version = "0.25.1"
+version = "0.22.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7114fe5457c61b276ab77c5055f206295b812608083644a5c5b2640c3102565c"
+checksum = "9ab5bcf04a2cdcbb50c7d6105de943f543f9ed92af55818fd17b660390fc8636"
 dependencies = [
  "libc",
  "pyo3-build-config",
@@ -1729,9 +1770,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-macros"
-version = "0.25.1"
+version = "0.22.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8725c0a622b374d6cb051d11a0983786448f7785336139c3c94f5aa6bef7e50"
+checksum = "0fd24d897903a9e6d80b968368a34e1525aeb719d568dba8b3d4bfa5dc67d453"
 dependencies = [
  "proc-macro2",
  "pyo3-macros-backend",
@@ -1741,9 +1782,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-macros-backend"
-version = "0.25.1"
+version = "0.22.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4109984c22491085343c05b0dbc54ddc405c3cf7b4374fc533f5c3313a572ccc"
+checksum = "36c011a03ba1e50152b4b394b479826cad97e7a21eb52df179cd91ac411cbfbe"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -1776,6 +1817,7 @@ version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
+ "libc",
  "rand_chacha",
  "rand_core",
 ]
@@ -1973,10 +2015,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ryu"
+version = "1.0.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
+
+[[package]]
 name = "saver"
 version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11539d8a4056bb0523bc35807a8a338bea0cc5b57c48669922b9fa5bb322c52b"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -1985,6 +2032,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_crypto_utils",
  "dock_merlin",
@@ -1998,13 +2046,13 @@ dependencies = [
 [[package]]
 name = "schnorr_pok"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c0599b0c4afcb0741d1d9a820da565b7b8b78193daa912dc86202756e0ba704"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_crypto_utils",
  "rayon",
@@ -2022,14 +2070,14 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 [[package]]
 name = "secret_sharing_and_dkg"
 version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21c4f3c5cba60ca061a2ddb74612541af529671c8a2560f5400d1e5a09628397"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-poly",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_crypto_utils",
  "rayon",
@@ -2090,6 +2138,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.108",
+]
+
+[[package]]
+name = "serde_json"
+version = "1.0.145"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "402a6f66d8c709116cf22f558eab210f5a50187f702eb4d7e5ef38d9a7f1c79c"
+dependencies = [
+ "itoa",
+ "memchr",
+ "ryu",
+ "serde",
+ "serde_core",
 ]
 
 [[package]]
@@ -2154,14 +2215,14 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 [[package]]
 name = "short_group_sig"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e939cd290cb9a5ab6ab73efd500b89840a8f4facbcd4d0de7e231f56d2cecb9e"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-poly",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_crypto_utils",
  "oblivious_transfer_protocols",
@@ -2200,8 +2261,7 @@ checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 [[package]]
 name = "smc_range_proof"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1dad4dd785afa16323c816c4471f86044fc487afd14a072bd8dd0bb0c0ab540"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -2277,12 +2337,6 @@ name = "target-lexicon"
 version = "0.12.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
-
-[[package]]
-name = "target-lexicon"
-version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df7f62577c25e07834649fc3b39fafdc597c0a3527dc1c60129201ccfcbaa50c"
 
 [[package]]
 name = "thiserror"
@@ -2449,14 +2503,14 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 [[package]]
 name = "vb_accumulator"
 version = "0.29.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1f0e3be6c7e96903d893d3575a352ebdf27f835be247bec03c8615d36ab4d4b"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-poly",
  "ark-serialize",
  "ark-std",
+ "cfg_eval",
  "digest",
  "dock_crypto_utils",
  "kvac",
@@ -2473,8 +2527,7 @@ dependencies = [
 [[package]]
 name = "verifiable_encryption"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acbe5355d4cae8647093933f4310a6c1aeac45c62e490cd59449169e574e301f"
+source = "git+https://github.com/docknetwork/crypto#224f195bb8babc2d0de5256135120e0aca9fbd19"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -2575,7 +2628,7 @@ dependencies = [
  "serde-wasm-bindgen",
  "shared-buffer",
  "tar",
- "target-lexicon 0.12.16",
+ "target-lexicon",
  "thiserror 1.0.69",
  "tracing",
  "wasm-bindgen",
@@ -2611,7 +2664,7 @@ dependencies = [
  "self_cell",
  "shared-buffer",
  "smallvec",
- "target-lexicon 0.12.16",
+ "target-lexicon",
  "thiserror 1.0.69",
  "wasmer-types",
  "wasmer-vm",
@@ -2634,7 +2687,7 @@ dependencies = [
  "more-asserts",
  "rayon",
  "smallvec",
- "target-lexicon 0.12.16",
+ "target-lexicon",
  "tracing",
  "wasmer-compiler",
  "wasmer-types",
@@ -2667,7 +2720,7 @@ dependencies = [
  "more-asserts",
  "rkyv",
  "sha2",
- "target-lexicon 0.12.16",
+ "target-lexicon",
  "thiserror 1.0.69",
  "xxhash-rust",
 ]

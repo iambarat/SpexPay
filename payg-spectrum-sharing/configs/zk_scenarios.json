@@ -1,0 +1,19 @@
+{
+  "csv": "data/results/zk_scenarios.csv",
+  "scenarios": [
+    {
+      "name": "baseline",
+      "runs": 3,
+      "device": "device_1234",
+      "attrs_a": ["device_1234", "tier_gold", "class_nav", "expA_2026-12-31"],
+      "attrs_b": ["device_1234", "session_sid_01", "limit_3600", "y0_root", "band_X", "eirp_30dbm", "bm_0xabc", "expB_2026-12-31", "unit_price_100"]
+    },
+    {
+      "name": "longer_expiry",
+      "runs": 2,
+      "device": "device_5678",
+      "attrs_a": ["device_5678", "tier_platinum", "class_nav", "expA_2028-12-31"],
+      "attrs_b": ["device_5678", "session_sid_02", "limit_7200", "y0_root", "band_Y", "eirp_33dbm", "bm_0xdef", "expB_2028-12-31", "unit_price_200"]
+    }
+  ]
+}
