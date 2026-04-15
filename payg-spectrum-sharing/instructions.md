@@ -146,6 +146,8 @@ forge create \
   src/Escrow.sol:Escrow
 ```
 
+Note deployed address as `ESCROW`. 
+
 ```bash
 # Export addresses
 export TOKEN=0x...   # from above
@@ -156,7 +158,6 @@ cast call $TOKEN "name()" --rpc-url http://127.0.0.1:8545
 
 ```
 
-Note deployed address as `ESCROW`. \
 4) Mint & approve (IssuerB):
 ```bash
 cast send $TOKEN "mint(address,uint256)" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 1000000000000000000000 \
@@ -260,19 +261,15 @@ cast send $ESCROW \
 
 
 
-
-
-
-
-
-  ```bash
+<!-- 
+```bash
   cast send $ESCROW \
     "openSession(bytes32,address,address,bytes,uint64,uint64,uint256,uint256,bytes32)" \
     $sid_hex <BM_ADDR> $TOKEN 0x01 \
     <L> 0 <price_per_beat_wei> <deposit_wei> $y0_hex \
     --rpc-url http://127.0.0.1:8545 \
     --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-  ```
+  ``` -->
 - BM can claim with any `i` and matching `y_i` from the JSON:
   ```bash
   cast send $ESCROW "claim(bytes32,uint64,bytes32)" \
@@ -302,10 +299,10 @@ This automates the off-chain heartbeat flow and on-chain claims using three long
   ```
 - Fund/approve IssuerB in MockERC20 (same key as above):
   ```bash
-  cast send $TOKEN "mint(address,uint256)" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 1000000000000000000000 \
+  cast send $TOKEN "mint(address,uint256)" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 1500 \
     --rpc-url http://127.0.0.1:8545 \
     --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-  cast send $TOKEN "approve(address,uint256)" $ESCROW 1000000000000000000000 \
+  cast send $TOKEN "approve(address,uint256)" $ESCROW 1000 \
     --rpc-url http://127.0.0.1:8545 \
     --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   ```
@@ -327,6 +324,7 @@ export ESCROW=<escrow address>
 export ISSUERB_PK=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80   # or your own
 python scripts/nodes/issuer_b_node.py \
   --L 20 \
+  --expB expB=$(date -d '+1 day' +%s) \
   --price 1000000000000000000 \
   --deposit 20000000000000000000 \
   --bm 0x70997970C51812dc3A010C7d01b50e0d17dc79C8   # BM address (Anvil account index 1)
@@ -387,9 +385,9 @@ This three-node setup simulates the live flow: IssuerB opens the session, User e
   remaining=${state[9]}
   beats_claimed=$lastI
   spent=$(python - <<PY
-price=int("$price"); lastI=int("$lastI"); print(price*lastI)
-PY
-)
+  price=int("$price"); lastI=int("$lastI"); print(price*lastI)
+  PY
+  )
   echo "beats_claimed=$beats_claimed"
   echo "spent_wei=$spent"
   echo "remaining_deposit_wei=$remaining"

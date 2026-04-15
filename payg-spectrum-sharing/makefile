@@ -20,3 +20,7 @@ bm-users:
 .PHONY: contracts-test
 contracts-test:
 	@cd contracts && forge test -q
+
+.PHONY: contracts-storage
+contracts-storage:
+	@cd contracts && forge test --match-test testStorageReport -vv

@@ -35,6 +35,7 @@ contract Escrow {
     error AlreadyClosed();
     error NonMonotonic();
     error InsufficientDeposit();
+    error ExpiryNotReached();
 
     function openSession(
         bytes32 sid,
@@ -99,6 +100,7 @@ contract Escrow {
         if (s.issuerB == address(0)) revert InvalidSession();
         if (s.closed) revert AlreadyClosed();
         if (msg.sender != s.issuerB) revert NotIssuerB();
+        if (block.timestamp <= s.expB) revert ExpiryNotReached();
         s.closed = true;
         uint256 refund = s.deposit;
         s.deposit = 0;

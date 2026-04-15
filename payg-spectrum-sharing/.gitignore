@@ -1,0 +1,24 @@
+# Local tooling and environments
+.codex
+.codex/
+.svm/
+.venv/
+venv/
+
+# Python cache artifacts
+__pycache__/
+*.py[cod]
+
+# Foundry build and cache artifacts
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+
+# Generated runtime data
+data/claims.jsonl
+data/hash_chain.json
+data/heartbeats.jsonl
+data/results/
+
+# Generated analysis outputs
+figures/

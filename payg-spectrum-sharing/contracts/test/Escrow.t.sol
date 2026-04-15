@@ -35,6 +35,7 @@ contract EscrowTest is Test {
     function testOpenClaimCloseHappyPath() public {
         bytes32[] memory ys = buildChain(sid, L);
         uint256 deposit = price * L;
+        uint64 expB = uint64(block.timestamp + 1 days);
         vm.prank(issuerB);
         escrow.openSession(
             sid,
@@ -42,7 +43,7 @@ contract EscrowTest is Test {
             address(token),
             hex"01",
             L,
-            0,
+            expB,
             price,
             deposit,
             ys[0]
@@ -59,6 +60,7 @@ contract EscrowTest is Test {
         assertEq(token.balanceOf(bm), 5 * price);
 
         // Close and refund remainder to issuerB
+        vm.warp(uint256(expB) + 1);
         vm.prank(issuerB);
         escrow.closeSession(sid);
         assertEq(token.balanceOf(issuerB), 10_000 ether - 5 * price);
@@ -69,6 +71,7 @@ contract EscrowTest is Test {
         bytes32[] memory ys = buildChain(sid, lLocal);
         uint256 priceLocal = 2 ether;
         uint256 deposit = priceLocal * lLocal; // exact funding
+        uint64 expB = uint64(block.timestamp + 1 days);
 
         vm.prank(issuerB);
         escrow.openSession(
@@ -77,7 +80,7 @@ contract EscrowTest is Test {
             address(token),
             hex"01",
             lLocal,
-            0,
+            expB,
             priceLocal,
             deposit,
             ys[0]
@@ -87,6 +90,7 @@ contract EscrowTest is Test {
         escrow.claim(sid, lLocal, ys[lLocal]);
         assertEq(token.balanceOf(bm), lLocal * priceLocal);
 
+        vm.warp(uint256(expB) + 1);
         vm.prank(issuerB);
         escrow.closeSession(sid);
         // No refund expected
@@ -125,6 +129,7 @@ contract EscrowTest is Test {
     function testOnlyIssuerBCanClose() public {
         bytes32[] memory ys = buildChain(sid, 3);
         uint256 deposit = price * 3;
+        uint64 expB = uint64(block.timestamp + 1 days);
         vm.prank(issuerB);
         escrow.openSession(
             sid,
@@ -132,7 +137,7 @@ contract EscrowTest is Test {
             address(token),
             hex"01",
             3,
-            0,
+            expB,
             price,
             deposit,
             ys[0]
@@ -140,6 +145,29 @@ contract EscrowTest is Test {
 
         vm.prank(bm);
         vm.expectRevert(Escrow.NotIssuerB.selector);
+        escrow.closeSession(sid);
+    }
+
+    function testIssuerBCannotCloseBeforeExpB() public {
+        bytes32[] memory ys = buildChain(sid, 3);
+        uint256 deposit = price * 3;
+        uint64 expB = uint64(block.timestamp + 1 days);
+
+        vm.prank(issuerB);
+        escrow.openSession(
+            sid,
+            bm,
+            address(token),
+            hex"01",
+            3,
+            expB,
+            price,
+            deposit,
+            ys[0]
+        );
+
+        vm.prank(issuerB);
+        vm.expectRevert(Escrow.ExpiryNotReached.selector);
         escrow.closeSession(sid);
     }
 
