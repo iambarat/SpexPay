@@ -1,0 +1,720 @@
+theory PAYGSpectrumSharingSecurity
+
+begin
+
+// Function signature and definition of the equational theory E
+
+functions: commit/2, fst/1, h/1, pair/2, pk/1, sign/2, snd/1, true/0,
+           verify/3
+equations:
+    fst(<x.1, x.2>) = x.1,
+    snd(<x.1, x.2>) = x.2,
+    verify(sign(x.1, x.2), x.1, pk(x.2)) = true
+
+restriction Equality:
+  "∀ x y #i. (Eq( x, y ) @ #i) ⇒ (x = y)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ x y #i. (Eq( x, y ) @ #i) ⇒ (x = y)"
+  */
+
+restriction Inequality:
+  "∀ x #i. (Neq( x, x ) @ #i) ⇒ (⊥)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ x #i. (Neq( x, x ) @ #i) ⇒ (⊥)"
+  */
+
+rule (modulo E) Issuer_KeyGen:
+   [ Fr( ~isk ) ]
+  --[ IssuerKeyGen( pk(~isk) ) ]->
+   [ !IssuerSK( ~isk ), !IssuerPK( pk(~isk) ), Out( pk(~isk) ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) User_Create:
+   [ Fr( ~uid ), Fr( ~mid ) ]
+  --[ UserCreated( ~uid, ~mid ) ]->
+   [ !User( ~uid, ~mid ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Corrupt_User:
+   [ !User( uid, mid ) ]
+  --[ Corrupted( uid ), RevealedMid( uid, mid ) ]->
+   [ Out( mid ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Issue_CredA:
+   [ !IssuerSK( ~isk ), !User( uid, mid ), Fr( ~attrs ) ]
+  --[ CredAIssued( uid, mid, ~attrs ), BBSSignedMsg( <mid, ~attrs>, ~isk )
+  ]->
+   [ !CredA( uid, mid, ~attrs, sign(<mid, ~attrs>, ~isk) ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Issue_CredB:
+   [ !CredA( uid, mid, attrs, sigA ), Fr( ~sid ) ]
+  --[ CredBIssued( uid, mid, ~sid ) ]->
+   [ !CredB( uid, mid, attrs, ~sid, sigA ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Create_Presentation:
+   [
+   !User( uid, mid ), !CredB( uid, mid, attrs, sid, sig ), Fr( ~r ),
+   Fr( ~ptok )
+   ]
+  --[
+  PresentationCreated( uid, mid, attrs, sid, ~ptok ),
+  HiddenInPresentation( uid, mid, ~ptok )
+  ]->
+   [
+   !ProofToken( ~ptok, attrs, sid, commit(mid, ~r) ),
+   Out( <~ptok, attrs, sid, commit(mid, ~r)> )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Verify_Presentation:
+   [ In( <ptok, attrs, sid, com> ), !ProofToken( ptok, attrs, sid, com ) ]
+  --[ PresentationVerified( attrs, sid, com, ptok ), SessionOpened( sid )
+  ]->
+   [ !Session( sid, attrs ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Init_HashChain:
+   [ !Session( sid, attrs ), Fr( ~y1 ) ]
+  --[ ChainInitialised( sid, h(<sid, 'ep0', ~y1>) ) ]->
+   [ ContractAnchor( sid, h(<sid, 'ep0', ~y1>) ), UserLeaf( sid, ~y1 ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) User_SendHeartbeat:
+   [ UserLeaf( sid, y_leaf ) ]
+  --[ UserSentHeartbeat( sid, y_leaf, 'ep0' ) ]->
+   [ Out( <sid, y_leaf, 'ep0'> ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Contract_AcceptHeartbeat:
+   [ In( <sid, y_recv, 'ep0'> ), ContractAnchor( sid, y_anchor ) ]
+  --[
+  Eq( h(<sid, 'ep0', y_recv>), y_anchor ),
+  HeartbeatAccepted( sid, y_recv, 'ep0' )
+  ]->
+   [ PaymentReady( sid, y_recv ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Claim_Payment:
+   [ PaymentReady( sid, y_last ), !Session( sid, attrs ) ]
+  --[ PaymentClaimed( sid, y_last ) ]->
+   [ ]
+
+  /* has exactly the trivial AC variant */
+
+lemma Unforgeability:
+  all-traces
+  "∀ attrs sid com ptok #v.
+    (PresentationVerified( attrs, sid, com, ptok ) @ #v) ⇒
+    (∃ uid mid #ja #jb.
+      (((CredAIssued( uid, mid, attrs ) @ #ja) ∧
+        (CredBIssued( uid, mid, sid ) @ #jb)) ∧
+       (#ja < #v)) ∧
+      (#jb < #v))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ attrs sid com ptok #v.
+  (PresentationVerified( attrs, sid, com, ptok ) @ #v)
+ ∧
+  ∀ uid mid #ja #jb.
+   (CredAIssued( uid, mid, attrs ) @ #ja) ∧
+   (CredBIssued( uid, mid, sid ) @ #jb)
+  ⇒
+   ((¬(#ja < #v)) ∨ (¬(#jb < #v)))"
+*/
+simplify
+solve( !ProofToken( ptok, attrs, sid, com ) ▶₁ #v )
+  case Create_Presentation
+  by contradiction /* from formulas */
+qed
+
+lemma Session_Requires_Credential:
+  all-traces
+  "∀ sid #i.
+    (SessionOpened( sid ) @ #i) ⇒
+    (∃ uid mid #j. (CredBIssued( uid, mid, sid ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ sid #i.
+  (SessionOpened( sid ) @ #i)
+ ∧
+  ∀ uid mid #j. (CredBIssued( uid, mid, sid ) @ #j) ⇒ ¬(#j < #i)"
+*/
+simplify
+solve( !ProofToken( ptok, attrs, sid, com ) ▶₁ #i )
+  case Create_Presentation
+  by contradiction /* from formulas */
+qed
+
+lemma BBS_Signature_Origin:
+  all-traces
+  "∀ m isk #i.
+    (BBSSignedMsg( m, isk ) @ #i) ⇒
+    (∃ #j. (IssuerKeyGen( pk(isk) ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ m isk #i.
+  (BBSSignedMsg( m, isk ) @ #i)
+ ∧
+  ∀ #j. (IssuerKeyGen( pk(isk) ) @ #j) ⇒ ¬(#j < #i)"
+*/
+simplify
+solve( !IssuerSK( ~isk ) ▶₀ #i )
+  case Issuer_KeyGen
+  by contradiction /* from formulas */
+qed
+
+lemma HiddenID_Secrecy:
+  all-traces
+  "∀ uid mid ptok #i.
+    ((HiddenInPresentation( uid, mid, ptok ) @ #i) ∧
+     (¬(∃ #c. Corrupted( uid ) @ #c))) ⇒
+    (¬(∃ #k. K( mid ) @ #k))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ uid mid ptok #i.
+  (HiddenInPresentation( uid, mid, ptok ) @ #i)
+ ∧
+  (∀ #c. (Corrupted( uid ) @ #c) ⇒ ⊥) ∧ (∃ #k. (K( mid ) @ #k))"
+*/
+simplify
+solve( !User( uid, mid ) ▶₀ #i )
+  case User_Create
+  solve( !CredB( ~uid, ~mid, attrs, sid, sig ) ▶₁ #i )
+    case Issue_CredB
+    solve( !KU( ~mid ) @ #vk )
+      case Corrupt_User
+      by contradiction /* from formulas */
+    qed
+  qed
+qed
+
+lemma Unlinkability_Across_Presentations:
+  all-traces
+  "∀ uid mid ptok1 ptok2 attrs1 attrs2 sid1 sid2 #i #j.
+    (((PresentationCreated( uid, mid, attrs1, sid1, ptok1 ) @ #i) ∧
+      (PresentationCreated( uid, mid, attrs2, sid2, ptok2 ) @ #j)) ∧
+     (¬(∃ #c. Corrupted( uid ) @ #c))) ⇒
+    (¬(∃ #k. K( mid ) @ #k))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ uid mid ptok1 ptok2 attrs1 attrs2 sid1 sid2 #i #j.
+  (PresentationCreated( uid, mid, attrs1, sid1, ptok1 ) @ #i) ∧
+  (PresentationCreated( uid, mid, attrs2, sid2, ptok2 ) @ #j)
+ ∧
+  (∀ #c. (Corrupted( uid ) @ #c) ⇒ ⊥) ∧ (∃ #k. (K( mid ) @ #k))"
+*/
+simplify
+solve( !User( uid, mid ) ▶₀ #i )
+  case User_Create
+  solve( !CredB( ~uid, ~mid, attrs1, sid1, sig ) ▶₁ #i )
+    case Issue_CredB
+    solve( !User( ~uid, ~mid ) ▶₀ #j )
+      case User_Create
+      solve( !CredB( ~uid, ~mid, attrs2, sid2, sig ) ▶₁ #j )
+        case Issue_CredB
+        solve( !KU( ~mid ) @ #vk )
+          case Corrupt_User
+          by contradiction /* from formulas */
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Commitment_Hiding:
+  all-traces
+  "∀ uid mid ptok #i.
+    ((HiddenInPresentation( uid, mid, ptok ) @ #i) ∧
+     (¬(∃ #c. Corrupted( uid ) @ #c))) ⇒
+    (¬(∃ #k. K( mid ) @ #k))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ uid mid ptok #i.
+  (HiddenInPresentation( uid, mid, ptok ) @ #i)
+ ∧
+  (∀ #c. (Corrupted( uid ) @ #c) ⇒ ⊥) ∧ (∃ #k. (K( mid ) @ #k))"
+*/
+simplify
+solve( !User( uid, mid ) ▶₀ #i )
+  case User_Create
+  solve( !CredB( ~uid, ~mid, attrs, sid, sig ) ▶₁ #i )
+    case Issue_CredB
+    solve( !KU( ~mid ) @ #vk )
+      case Corrupt_User
+      by contradiction /* from formulas */
+    qed
+  qed
+qed
+
+lemma ContractChain_Source [reuse]:
+  all-traces
+  "∀ sid y #i.
+    (ChainInitialised( sid, y ) @ #i) ⇒
+    (∃ #j. (SessionOpened( sid ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ sid y #i.
+  (ChainInitialised( sid, y ) @ #i)
+ ∧
+  ∀ #j. (SessionOpened( sid ) @ #j) ⇒ ¬(#j < #i)"
+*/
+simplify
+solve( !Session( sid, attrs ) ▶₀ #i )
+  case Verify_Presentation
+  by contradiction /* from formulas */
+qed
+
+lemma Fair_Settlement [use_induction]:
+  all-traces
+  "∀ sid y epoch #i.
+    (HeartbeatAccepted( sid, y, epoch ) @ #i) ⇒
+    (∃ #j. (UserSentHeartbeat( sid, y, epoch ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ sid y epoch #i.
+  (HeartbeatAccepted( sid, y, epoch ) @ #i)
+ ∧
+  ∀ #j. (UserSentHeartbeat( sid, y, epoch ) @ #j) ⇒ ¬(#j < #i)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  solve( (last(#i))  ∥
+         (∃ #j.
+           (UserSentHeartbeat( sid, y, 'ep0' ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i)) )
+    case case_1
+    solve( ContractAnchor( sid, h(<sid, 'ep0', y>) ) ▶₁ #i )
+      case Init_HashChain
+      solve( !ProofToken( ptok.1, attrs.1, ~sid, com ) ▶₁ #j )
+        case Create_Presentation
+        solve( !KU( ~y1 ) @ #vk.7 )
+          case User_SendHeartbeat
+          by contradiction /* from formulas */
+        qed
+      qed
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  qed
+qed
+
+lemma Payment_Requires_Heartbeat [reuse]:
+  all-traces
+  "∀ sid y_last #i.
+    (PaymentClaimed( sid, y_last ) @ #i) ⇒
+    (∃ epoch #j. (HeartbeatAccepted( sid, y_last, epoch ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ sid y_last #i.
+  (PaymentClaimed( sid, y_last ) @ #i)
+ ∧
+  ∀ epoch #j. (HeartbeatAccepted( sid, y_last, epoch ) @ #j) ⇒ ¬(#j < #i)"
+*/
+simplify
+solve( PaymentReady( sid, y_last ) ▶₀ #i )
+  case Contract_AcceptHeartbeat
+  by contradiction /* from formulas */
+qed
+
+lemma HashChain_Session_Integrity [reuse]:
+  all-traces
+  "∀ sid y epoch #i.
+    (HeartbeatAccepted( sid, y, epoch ) @ #i) ⇒
+    (∃ #j. (SessionOpened( sid ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ sid y epoch #i.
+  (HeartbeatAccepted( sid, y, epoch ) @ #i)
+ ∧
+  ∀ #j. (SessionOpened( sid ) @ #j) ⇒ ¬(#j < #i)"
+*/
+simplify
+solve( ContractAnchor( sid, h(<sid, 'ep0', y>) ) ▶₁ #i )
+  case Init_HashChain
+  by contradiction /* from formulas */
+qed
+
+lemma Collusion_Resistance:
+  all-traces
+  "∀ uid_h mid_h ptok #i.
+    ((HiddenInPresentation( uid_h, mid_h, ptok ) @ #i) ∧
+     (¬(∃ #c. Corrupted( uid_h ) @ #c))) ⇒
+    (¬(∃ #k. K( mid_h ) @ #k))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ uid_h mid_h ptok #i.
+  (HiddenInPresentation( uid_h, mid_h, ptok ) @ #i)
+ ∧
+  (∀ #c. (Corrupted( uid_h ) @ #c) ⇒ ⊥) ∧ (∃ #k. (K( mid_h ) @ #k))"
+*/
+simplify
+solve( !User( uid_h, mid_h ) ▶₀ #i )
+  case User_Create
+  solve( !CredB( ~uid, ~mid, attrs, sid, sig ) ▶₁ #i )
+    case Issue_CredB
+    solve( !KU( ~mid ) @ #vk )
+      case Corrupt_User
+      by contradiction /* from formulas */
+    qed
+  qed
+qed
+
+lemma Corrupted_Mid_Distinct_From_Honest:
+  all-traces
+  "∀ uid_h uid_c mid_h mid_c #i #j.
+    (((UserCreated( uid_h, mid_h ) @ #i) ∧
+      (RevealedMid( uid_c, mid_c ) @ #j)) ∧
+     (¬(∃ #c. Corrupted( uid_h ) @ #c))) ⇒
+    (¬(mid_h = mid_c))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ uid_h uid_c mid_h mid_c #i #j.
+  (UserCreated( uid_h, mid_h ) @ #i) ∧ (RevealedMid( uid_c, mid_c ) @ #j)
+ ∧
+  (∀ #c. (Corrupted( uid_h ) @ #c) ⇒ ⊥) ∧ (mid_h = mid_c)"
+*/
+simplify
+solve( !User( uid_c, ~mid ) ▶₀ #j )
+  case User_Create
+  by contradiction /* from formulas */
+qed
+
+lemma Colluder_View_Bounded:
+  all-traces
+  "∀ uid_h mid_h ptok uid_c mid_c #i #j.
+    (((HiddenInPresentation( uid_h, mid_h, ptok ) @ #i) ∧
+      (RevealedMid( uid_c, mid_c ) @ #j)) ∧
+     (¬(∃ #c. Corrupted( uid_h ) @ #c))) ⇒
+    (¬(∃ #k. K( mid_h ) @ #k))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ uid_h mid_h ptok uid_c mid_c #i #j.
+  (HiddenInPresentation( uid_h, mid_h, ptok ) @ #i) ∧
+  (RevealedMid( uid_c, mid_c ) @ #j)
+ ∧
+  (∀ #c. (Corrupted( uid_h ) @ #c) ⇒ ⊥) ∧ (∃ #k. (K( mid_h ) @ #k))"
+*/
+simplify
+solve( !User( uid_h, mid_h ) ▶₀ #i )
+  case User_Create
+  solve( !CredB( ~uid, ~mid, attrs, sid, sig ) ▶₁ #i )
+    case Issue_CredB
+    solve( !User( uid_c, mid_c ) ▶₀ #j )
+      case User_Create
+      solve( !KU( ~mid ) @ #vk )
+        case Corrupt_User
+        by contradiction /* from formulas */
+      qed
+    qed
+  qed
+qed
+
+lemma Exec_Issuance:
+  exists-trace
+  "∃ uid mid attrs sid #a #b.
+    ((CredAIssued( uid, mid, attrs ) @ #a) ∧
+     (CredBIssued( uid, mid, sid ) @ #b)) ∧
+    (#a < #b)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ uid mid attrs sid #a #b.
+  (CredAIssued( uid, mid, attrs ) @ #a) ∧
+  (CredBIssued( uid, mid, sid ) @ #b)
+ ∧
+  #a < #b"
+*/
+simplify
+solve( !IssuerSK( ~isk ) ▶₀ #a )
+  case Issuer_KeyGen
+  solve( !User( uid, mid ) ▶₁ #a )
+    case User_Create
+    solve( !CredA( ~uid, ~mid, attrs.1, sigA ) ▶₀ #b )
+      case Issue_CredA
+      SOLVED // trace found
+    qed
+  qed
+qed
+
+lemma Exec_Presentation:
+  exists-trace
+  "∃ uid mid attrs sid ptok #a #b #c.
+    ((((CredAIssued( uid, mid, attrs ) @ #a) ∧
+       (CredBIssued( uid, mid, sid ) @ #b)) ∧
+      (PresentationCreated( uid, mid, attrs, sid, ptok ) @ #c)) ∧
+     (#a < #c)) ∧
+    (#b < #c)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ uid mid attrs sid ptok #a #b #c.
+  (CredAIssued( uid, mid, attrs ) @ #a) ∧
+  (CredBIssued( uid, mid, sid ) @ #b) ∧
+  (PresentationCreated( uid, mid, attrs, sid, ptok ) @ #c)
+ ∧
+  (#a < #c) ∧ (#b < #c)"
+*/
+simplify
+solve( !IssuerSK( ~isk ) ▶₀ #a )
+  case Issuer_KeyGen
+  solve( !User( uid, mid ) ▶₁ #a )
+    case User_Create
+    solve( !CredA( ~uid, ~mid, attrs.1, sigA ) ▶₀ #b )
+      case Issue_CredA
+      solve( !User( ~uid, ~mid ) ▶₀ #c )
+        case User_Create
+        solve( !CredB( ~uid, ~mid, ~attrs, ~sid, sig ) ▶₁ #c )
+          case Issue_CredB
+          SOLVED // trace found
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Exec_Verification:
+  exists-trace
+  "∃ attrs sid com ptok #v.
+    PresentationVerified( attrs, sid, com, ptok ) @ #v"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ attrs sid com ptok #v.
+  (PresentationVerified( attrs, sid, com, ptok ) @ #v)"
+*/
+simplify
+solve( !ProofToken( ptok, attrs, sid, com ) ▶₁ #v )
+  case Create_Presentation
+  solve( !KU( ~ptok ) @ #vk.1 )
+    case Create_Presentation
+    solve( !KU( ~attrs ) @ #vk.3 )
+      case Create_Presentation
+      solve( !KU( ~sid ) @ #vk.5 )
+        case Create_Presentation
+        solve( !KU( commit(~mid, ~r) ) @ #vk.6 )
+          case Create_Presentation
+          SOLVED // trace found
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Exec_Heartbeat:
+  exists-trace
+  "∃ sid y epoch #s #a.
+    ((UserSentHeartbeat( sid, y, epoch ) @ #s) ∧
+     (HeartbeatAccepted( sid, y, epoch ) @ #a)) ∧
+    (#s < #a)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ sid y epoch #s #a.
+  (UserSentHeartbeat( sid, y, epoch ) @ #s) ∧
+  (HeartbeatAccepted( sid, y, epoch ) @ #a)
+ ∧
+  #s < #a"
+*/
+simplify
+solve( UserLeaf( sid, y ) ▶₀ #s )
+  case Init_HashChain
+  solve( ContractAnchor( ~sid, h(<~sid, 'ep0', ~y1>) ) ▶₁ #a )
+    case Init_HashChain
+    solve( !ProofToken( ptok, attrs, ~sid, com ) ▶₁ #j )
+      case Create_Presentation
+      solve( !ProofToken( ptok.1, attrs.1, ~sid, com ) ▶₁ #j.1 )
+        case Create_Presentation
+        solve( !ProofToken( ptok.3, attrs.1, ~sid, com ) ▶₁ #j.2 )
+          case Create_Presentation
+          solve( !ProofToken( ptok.4, attrs.1, ~sid, com ) ▶₁ #j.3 )
+            case Create_Presentation
+            solve( !KU( ~ptok.2 ) @ #vk.25 )
+              case Create_Presentation
+              solve( !KU( ~attrs ) @ #vk.22 )
+                case Create_Presentation
+                solve( !KU( ~sid ) @ #vk.4 )
+                  case Create_Presentation
+                  solve( !KU( ~y1 ) @ #vk.20 )
+                    case User_SendHeartbeat
+                    solve( !ProofToken( ptok.7, attrs.1, ~sid, com ) ▶₁ #j.4 )
+                      case Create_Presentation
+                      solve( !KU( ~ptok ) @ #vk.24 )
+                        case Create_Presentation
+                        solve( !KU( ~ptok.2 ) @ #vk.27 )
+                          case Create_Presentation
+                          solve( !KU( ~ptok.4 ) @ #vk.30 )
+                            case Create_Presentation
+                            solve( !KU( ~ptok.6 ) @ #vk.32 )
+                              case Create_Presentation
+                              solve( !KU( ~ptok.7 ) @ #vk.34 )
+                                case Create_Presentation
+                                solve( !KU( commit(~mid, ~r.1) ) @ #vk.32 )
+                                  case Create_Presentation
+                                  solve( !KU( commit(~mid, ~r) ) @ #vk.31 )
+                                    case Create_Presentation
+                                    solve( !KU( commit(~mid, ~r.2) ) @ #vk.32 )
+                                      case Create_Presentation
+                                      solve( !KU( commit(~mid, ~r.4) ) @ #vk.33 )
+                                        case Create_Presentation
+                                        solve( !KU( commit(~mid, ~r.6) ) @ #vk.34 )
+                                          case Create_Presentation
+                                          solve( !KU( commit(~mid, ~r.7) ) @ #vk.35 )
+                                            case Create_Presentation
+                                            SOLVED // trace found
+                                          qed
+                                        qed
+                                      qed
+                                    qed
+                                  qed
+                                qed
+                              qed
+                            qed
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Exec_Payment:
+  exists-trace "∃ sid y_last #i. PaymentClaimed( sid, y_last ) @ #i"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ sid y_last #i. (PaymentClaimed( sid, y_last ) @ #i)"
+*/
+simplify
+solve( PaymentReady( sid, y_last ) ▶₀ #i )
+  case Contract_AcceptHeartbeat
+  solve( !Session( ~sid, attrs ) ▶₁ #i )
+    case Verify_Presentation
+    solve( ContractAnchor( ~sid, h(<~sid, 'ep0', ~y1>) ) ▶₁ #j )
+      case Init_HashChain
+      solve( !ProofToken( ptok, attrs.1, ~sid, com ) ▶₁ #j.1 )
+        case Create_Presentation
+        solve( ContractAnchor( ~sid, h(<~sid, 'ep0', ~y1>) ) ▶₁ #j.2 )
+          case Init_HashChain
+          solve( !ProofToken( ptok.2, attrs.1, ~sid, com ) ▶₁ #j.2 )
+            case Create_Presentation
+            solve( !ProofToken( ptok.3, attrs.1, ~sid, com ) ▶₁ #j.3 )
+              case Create_Presentation
+              solve( !ProofToken( ptok.4, attrs.1, ~sid, com ) ▶₁ #j.4 )
+                case Create_Presentation
+                solve( !ProofToken( ptok.5, attrs.1, ~sid, com ) ▶₁ #j.5 )
+                  case Create_Presentation
+                  solve( !ProofToken( ptok.6, attrs.1, ~sid, com ) ▶₁ #j.6 )
+                    case Create_Presentation
+                    solve( !KU( ~y1 ) @ #vk.27 )
+                      case User_SendHeartbeat
+                      solve( !ProofToken( ptok.8, attrs.1, ~sid, com ) ▶₁ #j.7 )
+                        case Create_Presentation
+                        solve( !KU( ~sid ) @ #vk.3 )
+                          case Create_Presentation
+                          solve( !KU( ~ptok.1 ) @ #vk.37 )
+                            case Create_Presentation
+                            solve( !KU( ~attrs ) @ #vk.34 )
+                              case Create_Presentation
+                              solve( !KU( ~ptok.9 ) @ #vk.43 )
+                                case Create_Presentation
+                                solve( !KU( ~ptok ) @ #vk.35 )
+                                  case Create_Presentation
+                                  solve( !KU( ~ptok.3 ) @ #vk.37 )
+                                    case Create_Presentation
+                                    solve( !KU( ~ptok.4 ) @ #vk.40 )
+                                      case Create_Presentation
+                                      solve( !KU( ~ptok.6 ) @ #vk.42 )
+                                        case Create_Presentation
+                                        solve( !KU( ~ptok.8 ) @ #vk.45 )
+                                          case Create_Presentation
+                                          solve( !KU( ~ptok.9 ) @ #vk.47 )
+                                            case Create_Presentation
+                                            solve( !KU( ~ptok.10 ) @ #vk.49 )
+                                              case Create_Presentation
+                                              solve( !KU( commit(~mid, ~r.2) ) @ #vk.44 )
+                                                case Create_Presentation
+                                                solve( !KU( commit(~mid, ~r.7) ) @ #vk.47 )
+                                                  case Create_Presentation
+                                                  solve( !KU( commit(~mid, ~r) ) @ #vk.44 )
+                                                    case Create_Presentation
+                                                    solve( !KU( commit(~mid, ~r.3) ) @ #vk.45 )
+                                                      case Create_Presentation
+                                                      solve( !KU( commit(~mid, ~r.4) ) @ #vk.46 )
+                                                        case Create_Presentation
+                                                        solve( !KU( commit(~mid, ~r.6) ) @ #vk.47 )
+                                                          case Create_Presentation
+                                                          solve( !KU( commit(~mid, ~r.8) ) @ #vk.48 )
+                                                            case Create_Presentation
+                                                            solve( !KU( commit(~mid, ~r.9) ) @ #vk.49 )
+                                                              case Create_Presentation
+                                                              solve( !KU( commit(~mid, ~r.10) ) @ #vk.50 )
+                                                                case Create_Presentation
+                                                                SOLVED // trace found
+                                                              qed
+                                                            qed
+                                                          qed
+                                                        qed
+                                                      qed
+                                                    qed
+                                                  qed
+                                                qed
+                                              qed
+                                            qed
+                                          qed
+                                        qed
+                                      qed
+                                    qed
+                                  qed
+                                qed
+                              qed
+                            qed
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+/* All wellformedness checks were successful. */
+
+/*
+Generated from:
+Tamarin version 1.12.0
+Maude version 3.5.1
+Git revision: UNKNOWN, branch: UNKNOWN
+Compiled at: 2026-03-08 10:05:47.616272992 UTC
+*/
+
+end
