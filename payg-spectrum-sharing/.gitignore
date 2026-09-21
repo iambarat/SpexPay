@@ -3,6 +3,7 @@
 .codex/
 .svm/
 .venv/
+./../spec-venv/
 venv/
 
 # Python cache artifacts
