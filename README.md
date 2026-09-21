@@ -1,4 +1,4 @@
-### This readme file contains detailed mechanism and workflow of Pay-as-you-go Dynamic Spectrum Sharing Model
+### This readme file contains the instructions for `SpexPay: A Privacy-Preserving Pay-As-You-Go System for Dynamic Spectrum Sharing`.
 ### 1. System prerequisites
 
 ```bash
