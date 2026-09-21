@@ -1,9 +1,6 @@
 # Local tooling and environments
-.codex
-.codex/
 .svm/
 .venv/
-./../spec-venv/
 venv/
 
 # Python cache artifacts
