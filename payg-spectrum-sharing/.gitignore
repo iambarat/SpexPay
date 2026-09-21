@@ -3,6 +3,9 @@
 .venv/
 venv/
 
+./../spec-venv/
+./../prover_tools/
+
 # Python cache artifacts
 __pycache__/
 *.py[cod]
