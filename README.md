@@ -25,3 +25,4 @@ pip install maturin
 mkdir -p crypto/crypto_bindings && cd crypto/crypto_bindings
 maturin init --bindings pyo3 --name -payg_bbs
 ```
+### 4. Follow the steps from [this file](payg-spectrum-sharing/instructions.md).
